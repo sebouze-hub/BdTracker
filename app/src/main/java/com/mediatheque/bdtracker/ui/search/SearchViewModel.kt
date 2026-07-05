@@ -62,11 +62,26 @@ class SearchViewModel(private val repository: BdRepository) : ViewModel() {
                 _uiState.update {
                     it.copy(
                         enChargement = false,
-                        messageErreur = "Recherche impossible. Vérifiez votre connexion internet."
+                        messageErreur = messageErreurLisible(e)
                     )
                 }
             }
         }
+    }
+
+    /**
+     * Transforme une exception technique en message compréhensible par l'utilisateur,
+     * pour pouvoir distinguer "pas de réseau" de "le serveur a refusé la requête", etc.
+     */
+    private fun messageErreurLisible(e: Exception): String = when (e) {
+        is java.net.UnknownHostException ->
+            "Impossible de joindre le serveur (pas de connexion internet ou DNS bloqué par le réseau WiFi)."
+        is java.net.SocketTimeoutException ->
+            "Le serveur ne répond pas (connexion trop lente ou instable)."
+        is retrofit2.HttpException ->
+            "Le serveur a répondu avec une erreur (code ${e.code()})."
+        else ->
+            "Recherche impossible : ${e.javaClass.simpleName} — ${e.message ?: "erreur inconnue"}"
     }
 
     /** Coche/décoche un tome candidat avant l'ajout définitif. */
