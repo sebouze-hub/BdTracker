@@ -11,25 +11,22 @@ MVVM :  UI (Compose)  →  ViewModel (StateFlow)  →  Repository  →  Room (lo
 ```
 
 - **data/local** : entités Room (`SerieEntity`, `TomeEntity`) + DAO + base de données.
-- **data/remote** : appel à l'API publique et gratuite [Open Library](https://openlibrary.org/dev/docs/api/search) (aucune clé requise).
+- **data/remote** : appel à l'API publique et gratuite **Google Books** (aucune clé requise), utilisée pour retrouver automatiquement tous les tomes d'une série.
 - **data/repository** : `BdRepository`, source unique de vérité utilisée par tous les ViewModels.
 - **di** : injection de dépendances "faite main" (`AppContainer` + `ViewModelFactory`), volontairement simple, sans Hilt, pour rester lisible.
 - **ui** : un dossier par écran (`search`, `library`, `detail`), chacun avec son `ViewModel` (StateFlow) et son écran Compose.
 
 ## Écrans
 
-1. **Recherche** : interroge Open Library, affiche titre + couverture, bouton "+" pour ajouter à la bibliothèque.
+1. **Recherche** : le parent tape juste le **nom de la série** (ex: "Les Légendaires"). L'application interroge automatiquement l'API Google Books, détecte le numéro de chaque tome dans son titre, et affiche la liste complète avec les jaquettes. Un seul bouton ajoute tous les tomes cochés à la bibliothèque, sans aucune saisie manuelle de numéro.
 2. **Ma bibliothèque** : liste des séries ajoutées, recherche rapide locale, clic → détail.
-3. **Détail d'une série** : liste des tomes triés par numéro, pastille verte/grise (lu/non lu), clic sur la carte ou sur l'icône pour basculer le statut, filtre "non lus uniquement", bouton "+" pour ajouter un tome.
+3. **Détail d'une série** : liste des tomes triés par numéro, pastille verte/grise (lu/non lu), clic sur la carte ou sur l'icône pour basculer le statut, filtre "non lus uniquement". Un bouton "+" reste disponible pour ajouter manuellement un tome que Google Books n'aurait pas trouvé.
 
-## Pourquoi les tomes sont ajoutés manuellement dans le détail
+## Comment les tomes sont détectés automatiquement
 
-Aucune API publique et gratuite ne fournit une liste fiable et complète des tomes
-d'une série de BD (Open Library indexe des œuvres individuelles, pas des séries
-structurées). Le compromis retenu, simple et robuste, est :
-- la **recherche** sert à trouver et ajouter la **série** elle-même (avec couverture) ;
-- l'écran de **détail** permet d'ajouter chaque **tome** en quelques secondes (numéro + titre),
-  ce qui correspond exactement au geste réel en médiathèque ("tome 4 : pas encore lu, je l'ajoute").
+L'application utilise l'API publique et gratuite **Google Books** (`intitle:{nom de la série}`), qui indexe très bien les séries de BD francophones. Pour chaque résultat, `TomeNumeroExtractor` analyse le titre (ex: "Les Légendaires - Tome 12 - Le crépuscule des dieux") avec une série d'expressions régulières ("Tome X", "T.X", "Vol. X", "#X") afin d'en extraire le numéro. Les résultats sont ensuite triés par numéro et dédoublonnés (plusieurs éditions du même tome ne comptent qu'une fois). Si un titre ne contient aucun numéro détectable, un numéro de secours lui est attribué automatiquement à la suite des autres.
+
+Cette détection n'est pas garantie à 100 % (catalogue Google Books incomplet ou titres atypiques) : l'utilisateur peut décocher un résultat non pertinent avant l'ajout, et l'ajout manuel dans l'écran de détail reste disponible en solution de secours.
 
 ## Compiler et installer l'APK
 

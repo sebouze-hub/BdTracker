@@ -1,6 +1,6 @@
 package com.mediatheque.bdtracker.data.remote
 
-import com.mediatheque.bdtracker.data.remote.model.OpenLibrarySearchResponse
+import com.mediatheque.bdtracker.data.remote.model.GoogleBooksResponse
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -9,22 +9,22 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 
 /**
- * API publique et gratuite Open Library (aucune clé requise).
- * Documentation : https://openlibrary.org/dev/docs/api/search
+ * API publique et gratuite Google Books (aucune clé requise pour ce niveau d'usage).
+ * Documentation : https://developers.google.com/books/docs/v1/using
  */
-interface OpenLibraryApi {
+interface GoogleBooksApi {
 
-    @GET("search.json")
-    suspend fun rechercherLivres(
+    @GET("volumes")
+    suspend fun rechercherVolumes(
         @Query("q") requete: String,
-        @Query("language") langue: String = "fre",
-        @Query("limit") limite: Int = 20
-    ): OpenLibrarySearchResponse
+        @Query("maxResults") maxResultats: Int = 40,
+        @Query("langRestrict") langue: String = "fr"
+    ): GoogleBooksResponse
 
     companion object {
-        private const val BASE_URL = "https://openlibrary.org/"
+        private const val BASE_URL = "https://www.googleapis.com/books/v1/"
 
-        fun creer(): OpenLibraryApi {
+        fun creer(): GoogleBooksApi {
             val logger = HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BASIC
             }
@@ -37,7 +37,7 @@ interface OpenLibraryApi {
                 .client(client)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
-                .create(OpenLibraryApi::class.java)
+                .create(GoogleBooksApi::class.java)
         }
     }
 }

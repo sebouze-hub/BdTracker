@@ -33,7 +33,12 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "bdtracker.db"
-                ).build()
+                )
+                    // Le schéma a évolué pendant le développement : en cas de conflit
+                    // de version sur un appareil de test, on recrée simplement la base
+                    // plutôt que de planter (aucune donnée critique à ce stade).
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }

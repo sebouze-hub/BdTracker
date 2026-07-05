@@ -14,9 +14,9 @@ interface SerieDao {
     @Query("SELECT * FROM series WHERE id = :serieId")
     suspend fun getSerieParId(serieId: Long): SerieEntity?
 
-    // Évite les doublons quand on ajoute une série déjà connue depuis Open Library
-    @Query("SELECT * FROM series WHERE openLibraryKey = :key LIMIT 1")
-    suspend fun trouverParOpenLibraryKey(key: String): SerieEntity?
+    // Évite les doublons quand on recherche deux fois la même série
+    @Query("SELECT * FROM series WHERE titre = :titre COLLATE NOCASE LIMIT 1")
+    suspend fun trouverParTitre(titre: String): SerieEntity?
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun inserer(serie: SerieEntity): Long

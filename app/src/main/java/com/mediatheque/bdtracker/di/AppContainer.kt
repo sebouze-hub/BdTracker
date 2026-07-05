@@ -2,7 +2,7 @@ package com.mediatheque.bdtracker.di
 
 import android.content.Context
 import com.mediatheque.bdtracker.data.local.AppDatabase
-import com.mediatheque.bdtracker.data.remote.OpenLibraryApi
+import com.mediatheque.bdtracker.data.remote.GoogleBooksApi
 import com.mediatheque.bdtracker.data.repository.BdRepository
 
 /**
@@ -13,7 +13,7 @@ import com.mediatheque.bdtracker.data.repository.BdRepository
 class AppContainer(context: Context) {
 
     private val database = AppDatabase.getInstance(context)
-    private val api = OpenLibraryApi.creer()
+    private val api = GoogleBooksApi.creer()
 
     val repository = BdRepository(
         serieDao = database.serieDao(),

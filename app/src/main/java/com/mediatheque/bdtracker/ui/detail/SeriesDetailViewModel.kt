@@ -66,7 +66,7 @@ class SeriesDetailViewModel(
 
     fun ajouterTomeManuel(numero: Int, titre: String) {
         viewModelScope.launch {
-            repository.ajouterTome(serieId = serieId, numero = numero, titre = titre)
+            repository.ajouterTomeManuel(serieId = serieId, numero = numero, titre = titre)
         }
     }
 

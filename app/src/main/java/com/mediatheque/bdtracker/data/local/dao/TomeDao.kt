@@ -15,6 +15,9 @@ interface TomeDao {
     @Query("SELECT * FROM tomes WHERE serieId = :serieId AND lu = 0 ORDER BY numero ASC")
     fun observerTomesNonLus(serieId: Long): Flow<List<TomeEntity>>
 
+    @Query("SELECT * FROM tomes WHERE serieId = :serieId AND numero = :numero LIMIT 1")
+    suspend fun trouverParSerieEtNumero(serieId: Long, numero: Int): TomeEntity?
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun inserer(tome: TomeEntity): Long
 

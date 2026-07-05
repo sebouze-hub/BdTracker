@@ -19,8 +19,5 @@ data class SerieEntity(
     val auteur: String = "",
 
     // URL de la couverture (peut être vide si non disponible)
-    val couvertureUrl: String? = null,
-
-    // Identifiant Open Library de l'œuvre d'origine, utile pour éviter les doublons
-    val openLibraryKey: String? = null
+    val couvertureUrl: String? = null
 )
