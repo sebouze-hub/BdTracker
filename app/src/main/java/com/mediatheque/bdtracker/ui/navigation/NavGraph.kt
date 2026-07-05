@@ -1,11 +1,13 @@
 package com.mediatheque.bdtracker.ui.navigation
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -42,7 +44,7 @@ fun BdTrackerNavGraph(repository: BdRepository) {
         NavHost(
             navController = navController,
             startDestination = Routes.BIBLIOTHEQUE,
-            modifier = androidx.compose.ui.Modifier.padding(padding)
+            modifier = Modifier.padding(padding)
         ) {
             composable(Routes.BIBLIOTHEQUE) {
                 val viewModel: LibraryViewModel = viewModel(factory = ViewModelFactory(repository))
