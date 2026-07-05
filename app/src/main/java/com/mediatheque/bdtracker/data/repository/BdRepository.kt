@@ -41,7 +41,7 @@ class BdRepository(
     suspend fun rechercherTomesEnLigne(nomSerie: String): List<TomeCandidat> {
         if (nomSerie.isBlank()) return emptyList()
 
-        val reponse = api.rechercherVolumes(requete = "intitle:$nomSerie")
+        val reponse = appelAvecNouvellesTentatives { api.rechercherVolumes(requete = "intitle:$nomSerie") }
         val items = reponse.items.orEmpty()
 
         val candidats = items.mapNotNull { item ->
@@ -135,4 +135,25 @@ class BdRepository(
     }
 
     suspend fun supprimerTome(tome: TomeEntity) = tomeDao.supprimer(tome)
+
+    /**
+     * Réessaie automatiquement en cas d'erreur 429 (quota Google Books temporairement dépassé,
+     * fréquent sur un WiFi partagé). Deux tentatives supplémentaires avec délai croissant.
+     */
+    private suspend fun <T> appelAvecNouvellesTentatives(action: suspend () -> T): T {
+        var derniereErreur: retrofit2.HttpException? = null
+        repeat(3) { tentative ->
+            try {
+                return action()
+            } catch (e: retrofit2.HttpException) {
+                if (e.code() == 429) {
+                    derniereErreur = e
+                    kotlinx.coroutines.delay(1000L * (tentative + 1)) // 1s, puis 2s
+                } else {
+                    throw e
+                }
+            }
+        }
+        throw derniereErreur ?: IllegalStateException("Échec inattendu après plusieurs tentatives")
+    }
 }

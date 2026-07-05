@@ -14,6 +14,18 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+
+        // Clé API Google Books optionnelle : lue depuis local.properties (fichier NON commité,
+        // donc jamais visible sur GitHub). Sans clé, l'application fonctionne mais avec un
+        // quota de requêtes très bas et partagé avec tout le réseau WiFi (erreur 429 fréquente).
+        val localProperties = java.util.Properties().apply {
+            val fichier = rootProject.file("local.properties")
+            if (fichier.exists()) {
+                load(fichier.inputStream())
+            }
+        }
+        val cleGoogleBooks = localProperties.getProperty("GOOGLE_BOOKS_API_KEY", "")
+        buildConfigField("String", "GOOGLE_BOOKS_API_KEY", "\"$cleGoogleBooks\"")
     }
 
     buildTypes {
@@ -33,6 +45,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     composeOptions {

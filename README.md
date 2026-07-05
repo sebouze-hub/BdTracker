@@ -28,6 +28,38 @@ L'application utilise l'API publique et gratuite **Google Books** (`intitle:{nom
 
 Cette détection n'est pas garantie à 100 % (catalogue Google Books incomplet ou titres atypiques) : l'utilisateur peut décocher un résultat non pertinent avant l'ajout, et l'ajout manuel dans l'écran de détail reste disponible en solution de secours.
 
+## Erreur "code 429" (quota dépassé)
+
+Google Books limite le nombre de requêtes anonymes par adresse IP. Sur un WiFi partagé
+(médiathèque, bibliothèque), cette IP est utilisée par de nombreux appareils à la fois :
+le quota se sature vite et n'a **rien à voir avec ta connexion personnelle**. L'application
+réessaie automatiquement 2 fois en cas de 429 passager, mais si le quota du réseau est
+vraiment épuisé, il faut une clé API personnelle (gratuite) :
+
+1. Va sur [console.cloud.google.com](https://console.cloud.google.com/), crée un projet (gratuit, aucune carte bancaire nécessaire pour cette API).
+2. Menu **APIs & Services > Library** → recherche **"Books API"** → **Enable**.
+3. Menu **APIs & Services > Credentials** → **Create credentials > API key**. Copie la clé générée.
+4. (Recommandé) Restreins la clé à l'API "Books API" uniquement, via "Restrict key".
+5. À la racine du projet (le dossier `BdTracker/`, au même niveau que `settings.gradle.kts`), crée un fichier `local.properties` avec cette ligne :
+   ```
+   GOOGLE_BOOKS_API_KEY=ta_cle_ici
+   ```
+   Ce fichier est automatiquement ignoré par Git (`.gitignore`) : **il ne sera jamais visible sur GitHub**, contrairement au code du reste du projet qui est public.
+6. Recompile (`./gradlew assembleDebug` ou relance le workflow GitHub Actions après avoir ajouté ce fichier **en local uniquement**, ou en secret GitHub Actions — voir plus bas).
+
+### Utiliser la clé avec GitHub Actions (sans jamais l'exposer publiquement)
+
+Le fichier `local.properties` n'étant pas commité, le build GitHub Actions ne le voit pas.
+Pour lui fournir la clé de façon sécurisée :
+1. Sur GitHub : Settings du dépôt → **Secrets and variables > Actions** → **New repository secret**.
+2. Nom : `GOOGLE_BOOKS_API_KEY`, valeur : ta clé.
+3. Dans `.github/workflows/build-apk.yml`, juste avant l'étape "Compiler l'APK de debug", ajoute :
+   ```yaml
+   - name: Créer local.properties avec la clé API
+     run: echo "GOOGLE_BOOKS_API_KEY=${{ secrets.GOOGLE_BOOKS_API_KEY }}" >> local.properties
+   ```
+Ainsi la clé reste un secret GitHub, jamais visible dans le code source public.
+
 ## Compiler et installer l'APK
 
 ### Prérequis

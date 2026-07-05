@@ -1,5 +1,6 @@
 package com.mediatheque.bdtracker.data.remote
 
+import com.mediatheque.bdtracker.BuildConfig
 import com.mediatheque.bdtracker.data.remote.model.GoogleBooksResponse
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -9,7 +10,8 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 
 /**
- * API publique et gratuite Google Books (aucune clé requise pour ce niveau d'usage).
+ * API publique Google Books. Fonctionne sans clé (quota bas, partagé par IP),
+ * ou avec une clé API personnelle (quota individuel bien plus large) — voir README.
  * Documentation : https://developers.google.com/books/docs/v1/using
  */
 interface GoogleBooksApi {
@@ -18,7 +20,8 @@ interface GoogleBooksApi {
     suspend fun rechercherVolumes(
         @Query("q") requete: String,
         @Query("maxResults") maxResultats: Int = 40,
-        @Query("langRestrict") langue: String = "fr"
+        @Query("langRestrict") langue: String = "fr",
+        @Query("key") cleApi: String? = BuildConfig.GOOGLE_BOOKS_API_KEY.ifBlank { null }
     ): GoogleBooksResponse
 
     companion object {
