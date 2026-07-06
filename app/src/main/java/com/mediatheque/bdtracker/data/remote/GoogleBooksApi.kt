@@ -19,6 +19,7 @@ interface GoogleBooksApi {
     @GET("volumes")
     suspend fun rechercherVolumes(
         @Query("q") requete: String,
+        @Query("startIndex") indexDeDepart: Int = 0,
         @Query("maxResults") maxResultats: Int = 40,
         @Query("langRestrict") langue: String = "fr",
         @Query("key") cleApi: String? = BuildConfig.GOOGLE_BOOKS_API_KEY.ifBlank { null }

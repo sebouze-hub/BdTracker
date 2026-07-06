@@ -8,6 +8,9 @@ import com.google.gson.annotations.SerializedName
  * Aucune clé API n'est nécessaire pour ce niveau d'usage (quota gratuit).
  */
 data class GoogleBooksResponse(
+    @SerializedName("totalItems")
+    val totalItems: Int = 0,
+
     @SerializedName("items")
     val items: List<GoogleBookItem>? = null
 )

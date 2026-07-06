@@ -5,6 +5,7 @@ import com.mediatheque.bdtracker.data.local.dao.TomeDao
 import com.mediatheque.bdtracker.data.local.entity.SerieEntity
 import com.mediatheque.bdtracker.data.local.entity.TomeEntity
 import com.mediatheque.bdtracker.data.remote.GoogleBooksApi
+import com.mediatheque.bdtracker.data.remote.model.GoogleBookItem
 import com.mediatheque.bdtracker.util.TomeNumeroExtractor
 import kotlinx.coroutines.flow.Flow
 
@@ -34,17 +35,36 @@ class BdRepository(
     // ---------- Recherche en ligne (Google Books) ----------
 
     /**
-     * Recherche tous les tomes correspondant au nom de série donné, détecte
-     * automatiquement leur numéro à partir du titre, et les trie.
+     * Recherche TOUS les tomes correspondant au nom de série donné (pagination automatique :
+     * Google Books ne renvoie que 40 résultats par appel, on enchaîne donc les appels tant
+     * qu'il reste des résultats), détecte automatiquement leur numéro à partir du titre, et les trie.
      * Les résultats sans numéro détecté sont placés à la fin.
      */
     suspend fun rechercherTomesEnLigne(nomSerie: String): List<TomeCandidat> {
         if (nomSerie.isBlank()) return emptyList()
 
-        val reponse = appelAvecNouvellesTentatives { api.rechercherVolumes(requete = "intitle:$nomSerie") }
-        val items = reponse.items.orEmpty()
+        val taillePage = 40
+        val limiteSecurite = 400 // évite une boucle infinie si l'API renvoie un total incohérent
+        val tousLesItems = mutableListOf<GoogleBookItem>()
+        var indexDeDepart = 0
+        var totalAnnonce = Int.MAX_VALUE
 
-        val candidats = items.mapNotNull { item ->
+        while (indexDeDepart < totalAnnonce && indexDeDepart < limiteSecurite) {
+            val reponse = appelAvecNouvellesTentatives {
+                api.rechercherVolumes(requete = "intitle:$nomSerie", indexDeDepart = indexDeDepart, maxResultats = taillePage)
+            }
+            totalAnnonce = reponse.totalItems
+            val page = reponse.items.orEmpty()
+            if (page.isEmpty()) break // plus rien à récupérer, même si totalItems l'annonçait
+
+            tousLesItems += page
+            indexDeDepart += taillePage
+            if (indexDeDepart < totalAnnonce) {
+                kotlinx.coroutines.delay(200) // Petite pause polie entre deux pages de résultats
+            }
+        }
+
+        val candidats = tousLesItems.mapNotNull { item ->
             val info = item.volumeInfo ?: return@mapNotNull null
             val titre = info.titreComplet().ifBlank { return@mapNotNull null }
             TomeCandidat(
