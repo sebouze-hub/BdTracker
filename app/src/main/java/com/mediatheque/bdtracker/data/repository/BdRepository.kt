@@ -60,7 +60,7 @@ class BdRepository(
             tousLesItems += page
             indexDeDepart += taillePage
             if (indexDeDepart < totalAnnonce) {
-                kotlinx.coroutines.delay(200) // Petite pause polie entre deux pages de résultats
+                kotlinx.coroutines.delay(400) // Pause un peu plus large entre deux pages de résultats
             }
         }
 
@@ -162,13 +162,15 @@ class BdRepository(
      */
     private suspend fun <T> appelAvecNouvellesTentatives(action: suspend () -> T): T {
         var derniereErreur: retrofit2.HttpException? = null
-        repeat(3) { tentative ->
+        repeat(4) { tentative ->
             try {
                 return action()
             } catch (e: retrofit2.HttpException) {
-                if (e.code() == 429) {
+                // 429 = quota dépassé, 503 = serveur temporairement surchargé : dans les deux cas,
+                // on attend un peu et on réessaie plutôt que d'abandonner immédiatement.
+                if (e.code() == 429 || e.code() == 503) {
                     derniereErreur = e
-                    kotlinx.coroutines.delay(1000L * (tentative + 1)) // 1s, puis 2s
+                    kotlinx.coroutines.delay(1000L * (tentative + 1)) // 1s, 2s, 3s, 4s
                 } else {
                     throw e
                 }

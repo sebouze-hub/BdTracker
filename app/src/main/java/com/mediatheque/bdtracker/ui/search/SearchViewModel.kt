@@ -78,8 +78,11 @@ class SearchViewModel(private val repository: BdRepository) : ViewModel() {
             "Impossible de joindre le serveur (pas de connexion internet ou DNS bloqué par le réseau WiFi)."
         is java.net.SocketTimeoutException ->
             "Le serveur ne répond pas (connexion trop lente ou instable)."
-        is retrofit2.HttpException ->
-            "Le serveur a répondu avec une erreur (code ${e.code()})."
+        is retrofit2.HttpException -> when (e.code()) {
+            429 -> "Trop de requêtes envoyées à Google Books. Réessayez dans quelques instants."
+            503 -> "Le service Google Books est temporairement surchargé, même après plusieurs tentatives. Réessayez dans une minute."
+            else -> "Le serveur a répondu avec une erreur (code ${e.code()})."
+        }
         else ->
             "Recherche impossible : ${e.javaClass.simpleName} — ${e.message ?: "erreur inconnue"}"
     }
