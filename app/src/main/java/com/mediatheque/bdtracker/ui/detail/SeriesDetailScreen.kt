@@ -6,10 +6,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material3.*
@@ -17,8 +19,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
 import com.mediatheque.bdtracker.data.local.entity.TomeEntity
 import com.mediatheque.bdtracker.ui.theme.RougeNonLu
 import com.mediatheque.bdtracker.ui.theme.VertLu
@@ -32,6 +38,7 @@ fun SeriesDetailScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val serie by viewModel.serie.collectAsStateWithLifecycle()
     var afficherDialogueAjout by remember { mutableStateOf(false) }
+    var vignetteAgrandie by remember { mutableStateOf<TomeEntity?>(null) }
 
     Scaffold(
         topBar = {
@@ -85,7 +92,8 @@ fun SeriesDetailScreen(
                         LigneTome(
                             tome = tome,
                             onToggleLu = { viewModel.basculerLu(tome) },
-                            onSupprimer = { viewModel.supprimerTome(tome) }
+                            onSupprimer = { viewModel.supprimerTome(tome) },
+                            onClicVignette = { vignetteAgrandie = tome }
                         )
                     }
                     item { Spacer(modifier = Modifier.height(72.dp)) } // Place pour le FAB
@@ -103,6 +111,10 @@ fun SeriesDetailScreen(
             onAnnuler = { afficherDialogueAjout = false }
         )
     }
+
+    vignetteAgrandie?.let { tome ->
+        DialogueVignetteAgrandie(tome = tome, onFermer = { vignetteAgrandie = null })
+    }
 }
 
 /**
@@ -110,7 +122,12 @@ fun SeriesDetailScreen(
  * demandé par le parent en médiathèque : un clic pour marquer "déjà lu".
  */
 @Composable
-private fun LigneTome(tome: TomeEntity, onToggleLu: () -> Unit, onSupprimer: () -> Unit) {
+private fun LigneTome(
+    tome: TomeEntity,
+    onToggleLu: () -> Unit,
+    onSupprimer: () -> Unit,
+    onClicVignette: () -> Unit
+) {
     val couleurStatut = if (tome.lu) VertLu else RougeNonLu
 
     ElevatedCard(
@@ -128,6 +145,18 @@ private fun LigneTome(tome: TomeEntity, onToggleLu: () -> Unit, onSupprimer: () 
                     .size(12.dp)
                     .clip(CircleShape)
                     .background(couleurStatut)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Vignette de couverture : un clic dessus l'agrandit (sans marquer lu/non lu)
+            AsyncImage(
+                model = tome.couvertureUrl,
+                contentDescription = "Couverture du tome ${tome.numero}, appuyer pour agrandir",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(width = 44.dp, height = 60.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .clickable(onClick = onClicVignette)
             )
             Spacer(modifier = Modifier.width(12.dp))
 
@@ -147,6 +176,35 @@ private fun LigneTome(tome: TomeEntity, onToggleLu: () -> Unit, onSupprimer: () 
 
             IconButton(onClick = onSupprimer) {
                 Icon(Icons.Default.Delete, contentDescription = "Supprimer le tome")
+            }
+        }
+    }
+}
+
+/** Affiche la jaquette du tome en grand, par-dessus l'écran, jusqu'à ce que l'utilisateur la ferme. */
+@Composable
+private fun DialogueVignetteAgrandie(tome: TomeEntity, onFermer: () -> Unit) {
+    Dialog(onDismissRequest = onFermer, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .clickable(onClick = onFermer), // Cliquer n'importe où sur la vignette la referme
+            contentAlignment = Alignment.TopEnd
+        ) {
+            AsyncImage(
+                model = tome.couvertureUrl,
+                contentDescription = "Couverture agrandie du tome ${tome.numero}",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+            )
+            IconButton(onClick = onFermer) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Fermer",
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
             }
         }
     }
